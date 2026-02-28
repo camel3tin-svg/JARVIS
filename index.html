@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"/>
+<title>JARVIS HUD (iPhone)</title>
+<style>
+:root{
+  --bg:#04070d; --ink:#e8f7ff; --muted:#93b2c7;
+  --c1:#00e5ff; --c2:#2bffb6; --warn:#ffb36a;
+  --card:rgba(255,255,255,.06); --border:rgba(255,255,255,.12);
+  --shadow:0 18px 60px rgba(0,0,0,.6);
+  --r:16px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  background:
+    radial-gradient(1100px 700px at 20% 10%, rgba(0,229,255,.14), transparent 55%),
+    radial-gradient(900px 650px at 85% 20%, rgba(43,255,182,.10), transparent 55%),
+    linear-gradient(135deg, var(--bg), #070b14);
+  overflow-x:hidden;
+}
+.bg{
+  position:fixed; inset:-160px; pointer-events:none; opacity:.55;
+  background:
+    radial-gradient(circle at 35% 25%, rgba(0,229,255,.12), transparent 55%),
+    radial-gradient(circle at 75% 80%, rgba(43,255,182,.09), transparent 55%),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.03), rgba(255,255,255,.03) 1px, transparent 1px, transparent 7px);
+}
+.scan{
+  position:fixed; inset:-60px; pointer-events:none; opacity:.35; mix-blend-mode:screen;
+  background:repeating-linear-gradient(180deg, rgba(0,229,255,0), rgba(0,229,255,0) 10px, rgba(0,229,255,.10) 11px, rgba(0,229,255,0) 16px);
+  animation:scan 3.2s linear infinite;
+}
+@keyframes scan{0%{transform:translateY(-30px)}100%{transform:translateY(30px)}}
+.top{
+  position:sticky; top:0; z-index:50;
+  display:flex; justify-content:space-between; align-items:center; gap:10px;
+  padding:14px 14px;
+  backdrop-filter: blur(14px);
+  background: rgba(0,0,0,.28);
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
+.brand{display:flex; align-items:center; gap:10px}
+.orb{
+  width:38px;height:38px;border-radius:14px;
+  background: radial-gradient(circle at 30% 30%, rgba(0,229,255,1), rgba(0,229,255,.2) 60%, rgba(43,255,182,.12));
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 18px 60px rgba(0,229,255,.18);
+}
+.btitle{font-weight:950; letter-spacing:.6px}
+.bsub{font-size:12px;color:var(--muted);margin-top:2px}
+.actions{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end}
+.btn{
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.06);
+  color: var(--ink);
+  padding:10px 12px; border-radius:12px;
+  font-weight:850; font-size:13px;
+  cursor:pointer; user-select:none;
+  transition:transform .12s ease, background .12s ease, border-color .12s ease;
+}
+.btn:hover{transform:translateY(-1px); background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.20)}
+.btn:active{transform:translateY(0)}
+.btn-accent{
+  border:none;
+  background: linear-gradient(135deg, rgba(0,229,255,1), rgba(43,255,182,1));
+  color:#041016;
+  box-shadow:0 18px 60px rgba(0,229,255,.16);
+}
+.wrap{width:min(1100px,94%); margin:14px auto 28px; display:grid; gap:12px}
+.panel{
+  background: var(--card);
+  border:1px solid var(--border);
+  border-radius: var(--r);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(14px);
+  overflow:hidden;
+}
+.hero{display:grid; grid-template-columns:1.2fr .8fr}
+@media(max-width:900px){.hero{grid-template-columns:1fr}}
+.pbody{padding:14px}
+.kicker{
+  display:inline-block; font-size:12px; color:rgba(255,255,255,.75);
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(0,0,0,.22);
+  padding:8px 10px; border-radius:999px;
+}
+h1{margin:12px 0 8px; font-size:32px; letter-spacing:-.3px}
+.muted{color:var(--muted); line-height:1.6}
+.composer{display:flex; gap:10px; margin-top:12px}
+.composer input{
+  flex:1; padding:12px 12px; border-radius:12px;
+  border:1px solid rgba(255,255,255,.12);
+  background:rgba(0,0,0,.22); color:var(--ink);
+  outline:none; font-size:14px;
+}
+.composer input:focus{border-color: rgba(0,229,255,.35)}
+.chips{display:flex; gap:10px; flex-wrap:wrap; margin-top:10px}
+.chip{
+  font-size:12px; padding:8px 10px; border-radius:999px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.05); color:rgba(255,255,255,.86);
+}
+.statusline{display:flex; align-items:center; gap:10px; margin-top:12px; font-size:13px}
+.dot{
+  width:10px;height:10px;border-radius:999px;
+  background: linear-gradient(135deg, rgba(0,229,255,1), rgba(43,255,182,1));
+  box-shadow: 0 0 18px rgba(0,229,255,.35);
+}
+.warn{
+  margin-top:10px; padding:12px; border-radius:14px;
+  border:1px solid rgba(255,179,106,.25);
+  background: rgba(255,179,106,.10);
+  color: rgba(255,255,255,.92);
+  display:none;
+}
+.holoBox{display:flex; align-items:center; justify-content:center; padding:14px}
+.holo{
+  width:min(360px,100%); aspect-ratio:1/1;
+  border-radius:24px; border:1px solid rgba(255,255,255,.10);
+  background: radial-gradient(circle at 50% 40%, rgba(0,229,255,.12), rgba(0,0,0,.18));
+  position:relative; overflow:hidden;
+}
+.holo .ring{position:absolute; inset:18%; border-radius:999px; border:1px solid rgba(0,229,255,.38); animation:spin 12s linear infinite}
+.holo .ring2{inset:26%; border-color: rgba(43,255,182,.22); animation-duration:18s}
+.holo .ring3{inset:34%; border-color: rgba(0,229,255,.18); animation-duration:26s}
+@keyframes spin{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}
+.holo .core{
+  position:absolute; inset:43%; border-radius:999px;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.8), rgba(0,229,255,.9) 35%, rgba(43,255,182,.35));
+  box-shadow: 0 0 60px rgba(0,229,255,.25);
+  animation:pulse 1.9s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.labels{
+  position:absolute; left:14px; right:14px; bottom:14px;
+  display:grid; grid-template-columns:repeat(3,1fr); gap:10px;
+}
+.label{
+  padding:10px; border-radius:14px; border:1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.20);
+}
+.label span{display:block; font-size:11px; color:rgba(255,255,255,.70)}
+.label b{display:block; margin-top:6px; letter-spacing:.2px}
+
+.head{
+  display:flex; justify-content:space-between; align-items:center;
+  padding:12px 14px; border-bottom:1px solid rgba(255,255,255,.08);
+}
+.ptitle{font-weight:950}
+.pactions{display:flex; gap:8px; flex-wrap:wrap}
+.cards{padding:12px 14px 14px; display:grid; grid-template-columns:repeat(4,1fr); gap:10px}
+@media(max-width:900px){.cards{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:520px){.cards{grid-template-columns:1fr}}
+.card{
+  padding:12px; border-radius:14px; border:1px solid rgba(255,255,255,.10);
+  background: rgba(0,0,0,.18);
+}
+.ck{font-size:12px; color:rgba(255,255,255,.70)}
+.cv{font-size:18px; font-weight:950; margin-top:8px}
+.cs{font-size:12px; color:var(--muted); margin-top:6px}
+.chart{padding:0 14px 14px}
+.chartTitle{font-weight:950; margin:6px 0 10px}
+.chartGrid{
+  height:110px; border-radius:14px; border:1px solid rgba(255,255,255,.10);
+  background:
+    linear-gradient(to top, rgba(0,229,255,.14), transparent 60%),
+    repeating-linear-gradient(to right, rgba(255,255,255,.06) 0 1px, transparent 1px 18px);
+  position:relative; overflow:hidden;
+}
+.bar{
+  position:absolute; bottom:10px; width:10px; border-radius:999px;
+  background: linear-gradient(180deg, rgba(0,229,255,1), rgba(43,255,182,1));
+  box-shadow:0 0 16px rgba(0,229,255,.18);
+}
+.log{padding:12px 14px 14px; display:flex; flex-direction:column; gap:10px; max-height:320px; overflow:auto}
+.msg{padding:12px; border-radius:14px; border:1px solid rgba(255,255,255,.10); background:rgba(0,0,0,.18); line-height:1.5; font-size:13px}
+.meta{font-size:11px; color:rgba(255,255,255,.60); margin-bottom:6px}
+.user{border-color:rgba(0,229,255,.18)}
+.jarvis{border-color:rgba(43,255,182,.18)}
+.footer{padding:12px 14px 20px; color:var(--muted); font-size:12px; text-align:center}
+
+</style>
+</head>
+<body>
+<div class="bg"></div><div class="scan"></div>
+
+<div class="top">
+  <div class="brand">
+    <div class="orb"></div>
+    <div>
+      <div class="btitle">JARVIS</div>
+      <div class="bsub">iPhone HUD • Pure Frontend</div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn" id="wakeBtn">Wake</button>
+    <button class="btn" id="micBtn">Mic</button>
+    <button class="btn btn-accent" id="voiceBtn">Voice: ON</button>
+    <button class="btn" id="helpBtn">Help</button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <section class="panel hero">
+    <div class="pbody">
+      <div class="kicker">IRON-MAN HUD • PURE FRONTEND (IPHONE)</div>
+      <h1>Just A Rather Very Intelligent System</h1>
+      <div class="muted">
+        This is a cinematic JARVIS experience in your browser: hologram core, command console, dashboard and voice output.
+        <b>No Python, no backend.</b>
+      </div>
+
+      <div class="composer">
+        <input id="cmd" placeholder="Type command… e.g. help, time, scan, status, mode stealth, clear">
+        <button class="btn btn-accent" id="runBtn">Run</button>
+      </div>
+
+      <div class="chips" id="chips"></div>
+
+      <div class="statusline">
+        <span class="dot"></span>
+        <span id="status">Standing by.</span>
+      </div>
+
+      <div class="warn" id="warn"></div>
+    </div>
+
+    <div class="holoBox">
+      <div class="holo">
+        <div class="ring"></div>
+        <div class="ring ring2"></div>
+        <div class="ring ring3"></div>
+        <div class="core"></div>
+        <div class="labels">
+          <div class="label"><span>CORE</span><b id="core">IDLE</b></div>
+          <div class="label"><span>MODE</span><b id="mode">AURORA</b></div>
+          <div class="label"><span>LINK</span><b id="link">LOCAL</b></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="head">
+      <div>
+        <div class="ptitle">Dashboard</div>
+        <div class="muted" style="font-size:12px">Local demo metrics</div>
+      </div>
+      <div class="pactions">
+        <button class="btn" id="refreshBtn">Refresh</button>
+      </div>
+    </div>
+
+    <div class="cards">
+      <div class="card"><div class="ck">System</div><div class="cv" id="sys">Nominal</div><div class="cs" id="sysd">All subsystems stable</div></div>
+      <div class="card"><div class="ck">Local Time</div><div class="cv" id="time">--:--</div><div class="cs" id="date">---</div></div>
+      <div class="card"><div class="ck">Security</div><div class="cv" id="sec">Protected</div><div class="cs">Demo lockdown enabled</div></div>
+      <div class="card"><div class="ck">Trace</div><div class="cv" id="trace">Ready</div><div class="cs">Command-first workflow</div></div>
+    </div>
+
+    <div class="chart">
+      <div class="chartTitle">Activity Trace</div>
+      <div class="chartGrid" id="chart"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="head">
+      <div>
+        <div class="ptitle">Console</div>
+        <div class="muted" style="font-size:12px">Commands & responses</div>
+      </div>
+      <div class="pactions">
+        <button class="btn" id="clearBtn">Clear</button>
+      </div>
+    </div>
+    <div class="log" id="log"></div>
+  </section>
+
+  <div class="footer">Tip: On iPhone, tap the page once before using Voice (Apple requires user interaction).</div>
+
+</div>
+
+<script>
+const $ = (id)=>document.getElementById(id);
+const logEl = $("log");
+const warnEl = $("warn");
+let voiceOn = true;
+
+const state = { mode:"AURORA", core:"IDLE", link:"LOCAL" };
+
+function stamp(){ return new Date().toLocaleString(); }
+function esc(s){ return (s+"").replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[m])); }
+
+function setHud(coreText, statusText){
+  if(coreText) state.core = coreText;
+  $("core").textContent = state.core;
+  $("mode").textContent = state.mode;
+  $("link").textContent = state.link;
+  if(statusText) $("status").textContent = statusText;
+}
+
+function addMsg(role, text){
+  const d = document.createElement("div");
+  d.className = "msg " + role;
+  d.innerHTML = `<div class="meta">${role==="user"?"YOU":"JARVIS"} • ${stamp()}</div><div>${esc(text)}</div>`;
+  logEl.prepend(d);
+}
+
+function speak(text){
+  if(!voiceOn) return;
+  if(!("speechSynthesis" in window)) return;
+  try{
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = 1.02; u.pitch = 1.0; u.volume = 1.0;
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+function jarvis(text){
+  addMsg("jarvis", text);
+  speak(text);
+}
+
+function toastWarn(msg){
+  warnEl.style.display="block";
+  warnEl.textContent = msg;
+  setTimeout(()=>{ warnEl.style.display="none"; }, 2200);
+}
+
+function renderChips(){
+  const chips = ["help","time","status","scan","mode stealth","mode aurora","lockdown","clear"];
+  const wrap = $("chips"); wrap.innerHTML="";
+  chips.forEach(c=>{
+    const b = document.createElement("div");
+    b.className="chip"; b.textContent=c;
+    b.onclick=()=>run(c);
+    wrap.appendChild(b);
+  });
+}
+
+function refreshDashboard(){
+  $("time").textContent = new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+  $("date").textContent = new Date().toLocaleDateString([], {weekday:"short", year:"numeric", month:"short", day:"numeric"});
+  const opts = [
+    ["Nominal","All subsystems stable"],
+    ["Elevated","Sensor sweep running"],
+    ["Optimized","Cache warmed • 98% hit rate"],
+    ["Alert","External noise detected (demo)"]
+  ];
+  const p = opts[Math.floor(Math.random()*opts.length)];
+  $("sys").textContent = p[0]; $("sysd").textContent = p[1];
+
+  const grid = $("chart"); grid.innerHTML="";
+  const n=22;
+  for(let i=0;i<n;i++){
+    const bar=document.createElement("div");
+    bar.className="bar";
+    bar.style.left=(6+i*(100/n))+"%";
+    bar.style.height=(10+Math.floor(Math.random()*80))+"px";
+    grid.appendChild(bar);
+  }
+}
+
+function run(input){
+  const cmd = (input || $("cmd").value || "").trim();
+  if(!cmd) return;
+  $("cmd").value="";
+  addMsg("user", cmd);
+  setHud("ACTIVE","Processing…");
+
+  const lower = cmd.toLowerCase();
+
+  if(lower==="help"||lower==="commands"){
+    jarvis("Commands: help, time, status, scan, lockdown, mode <name>, clear. Pure frontend mode.");
+    setHud("IDLE","Standing by."); return;
+  }
+
+  if(lower==="time"){
+    const t = new Date().toLocaleTimeString([], {hour:"2-digit", minute:"2-digit"});
+    jarvis("The current time is " + t + ".");
+    refreshDashboard();
+    setHud("IDLE","Standing by."); return;
+  }
+
+  if(lower==="status"){
+    jarvis(`Core: ${state.core}. Mode: ${state.mode}. Link: ${state.link}. System: ${$("sys").textContent}.`);
+    setHud("IDLE","Standing by."); return;
+  }
+
+  if(lower.startsWith("mode ")){
+    const m = cmd.slice(5).trim();
+    state.mode = (m?m:"AURORA").toUpperCase();
+    $("mode").textContent = state.mode;
+    jarvis("Mode set to " + state.mode + ".");
+    setHud("IDLE","Standing by."); return;
+  }
+
+  if(lower==="scan"){
+    setHud("SCAN","Scanning…");
+    jarvis("Initiating sensor sweep.");
+    setTimeout(()=>{
+      jarvis("Scan complete. No threats detected. Demo environment stable.");
+      refreshDashboard();
+      setHud("IDLE","Standing by.");
+    }, 900);
+    return;
+  }
+
+  if(lower==="lockdown"){
+    $("sec").textContent="LOCKED";
+    jarvis("Lockdown engaged. Demo security protocol active.");
+    setHud("IDLE","Standing by."); return;
+  }
+
+  if(lower==="clear"){
+    logEl.innerHTML="";
+    jarvis("Console cleared.");
+    setHud("IDLE","Standing by."); return;
+  }
+
+  // fun shortcuts
+  if(lower==="wake"){
+    jarvis("At your service.");
+    setHud("READY","Awaiting command.");
+    return;
+  }
+
+  jarvis("Command not recognized. Say 'help' to see commands.");
+  setHud("IDLE","Standing by.");
+}
+
+$("runBtn").onclick=()=>run();
+$("cmd").addEventListener("keydown",(e)=>{ if(e.key==="Enter") run(); });
+
+$("wakeBtn").onclick=()=>{ run("wake"); };
+$("helpBtn").onclick=()=>{ run("help"); };
+$("refreshBtn").onclick=()=>{ refreshDashboard(); toastWarn("Dashboard refreshed"); };
+$("clearBtn").onclick=()=>{ run("clear"); };
+
+$("voiceBtn").onclick=()=>{
+  voiceOn = !voiceOn;
+  $("voiceBtn").textContent = "Voice: " + (voiceOn?"ON":"OFF");
+  toastWarn("Voice " + (voiceOn?"enabled":"disabled"));
+  if(voiceOn) speak("Voice enabled.");
+};
+
+$("micBtn").onclick=()=>{
+  // iPhone Safari voice recognition not reliable → simulate
+  toastWarn("Mic demo: iPhone Safari voice recognition limited. Type commands instead.");
+  jarvis("Voice input is limited on this device. Please type your command.");
+};
+
+renderChips();
+refreshDashboard();
+jarvis("Systems online. Say 'help' for commands.");
+setHud("IDLE","Standing by.");
+</script>
+</body>
+</html>
